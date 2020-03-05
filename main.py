@@ -1,6 +1,7 @@
 import requests
 import argparse
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from progress.bar import Bar
 
 def sendRequest(secret):
@@ -16,23 +17,27 @@ def sendRequest(secret):
         if response.status_code < 400:
             print "Got response " + response.status_code + " for request " + target_url 
 
+        return response.status_code
     except ConnectionError as conn_e:
         if args.debugging:
             print "Connection error: See details below." 
             print conn_e
+        return response.status_code
+
 
 def iterateOverPermutations(str): 
      permList = [] 
      charList = list(str)
      permList = permutate(charList)
-
      maxElements = len(permList)
+
      bar = Bar('Fuzzing ' + args.url, max=maxElements)
  
      for perm in list(permList): 
-         sendRequest(''.join(perm)) 
+         processes = []
+         with ThreadPoolExecutor(max_workers=args.threads) as executor:
+             processes.append(executor.submit(sendRequest, ''.join(perm)))
          bar.next()
-
      bar.finish()
      print "Finished fuzzing target " + args.url
         
@@ -79,7 +84,8 @@ if __name__ == "__main__":
     parser.add_argument('--url', required=True, help='The target URL. This URL should point to and enpoint. URL parameters should be such that a secret can be appended.')
     parser.add_argument('--secret', default="123456789", help='Initial API secret to start fuzzing from.')
     parser.add_argument('--fuzzing', default=True, help='Enable Fuzzing.')
-    parser.add_argument('--debugging', default=False, help='Enable extended output.')
+    parser.add_argument('--threads', default=10, help='Number of threads calling API simultaneously.')
+    parser.add_argument('--debugging', help='Enable extended output.')
 
     args = parser.parse_args()
 
