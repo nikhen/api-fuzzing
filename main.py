@@ -16,6 +16,8 @@ def sendRequest(secret):
         )
         if response.status_code < 400:
             print "Got response " + response.status_code + " for request " + target_url 
+        elif response.status_code == 429:
+            print "Got status code 429 (too many requests)." 
 
         return response.status_code
     except ConnectionError as conn_e:
@@ -31,7 +33,7 @@ def iterateOverPermutations(str):
      permList = permutate(charList)
      maxElements = len(permList)
 
-     bar = Bar('Fuzzing ' + args.url, max=maxElements)
+     bar = Bar('Fuzzing ', max=maxElements)
  
      for perm in list(permList): 
          processes = []
