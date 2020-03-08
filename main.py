@@ -1,5 +1,6 @@
 import requests
 import argparse
+import os
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from progress.bar import Bar
@@ -14,27 +15,24 @@ def sendRequest(secret):
             target_url,
             headers = {'Authorization': 'Bearer bogus'}
         )
-        if response.status_code < 400:
-            print("Got response " + response.status_code + " for request " + target_url )
-        elif response.status_code == 429:
-            print("Got status code 429 (too many requests).")
-
         if args.debugging:
+            print(response.text)
             print(response.status_code)
-
-        return response.status_code
 
     except ConnectionError as conn_e:
         if args.debugging:
             print("Connection error: See details below.")
             print(conn_e)
-
         return response.status_code
 
-    except Exception as general_exception:
-        if args.debugging:
-            print(general_exception)
-
+    if response.status_code < 400:
+        print("\nGot response " + str(response.status_code) + " for request " + str(target_url) )
+        os._exit(1)
+        return response.status_code
+    elif response.status_code == 429:
+        print("Got status code 429 (too many requests).")
+        return response.status_code
+    else:
         return response.status_code
 
 
@@ -44,7 +42,7 @@ def iterateOverPermutations(str):
      permList = permutate(charList)
      maxElements = len(permList)
 
-     bar = Bar('Fuzzing ' + args.url, max=maxElements)
+     bar = Bar("Fuzzing " + args.url, max=maxElements)
  
      for perm in list(permList): 
          processes = []
@@ -81,6 +79,8 @@ def permutate(permutationList):
             bufferInt += 1
             if bufferInt < 256:
                 bufferChar = chr(bufferInt)
+            else:
+                bufferChar = chr(bufferInt - 10)
 
         for s in permutate(permutationList[1:]):
             bufferList = []
@@ -89,8 +89,6 @@ def permutate(permutationList):
             returnList.append(''.join(bufferList))        
             bufferList = []
             bufferList.append(s)
-
-
             bufferList.append(bufferChar)
             returnList.append(''.join(bufferList))        
        
@@ -101,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument('--url', required=True, help='The target URL. This URL should point to and enpoint. URL parameters should be such that a secret can be appended.')
     parser.add_argument('--secret', default="123456789", help='Initial API secret to start fuzzing from.')
     parser.add_argument('--fuzzing', default=True, help='Enable Fuzzing.')
-    parser.add_argument('--threads', default=5, help='Number of threads calling target API simultaneously.')
+    parser.add_argument('--threads', default=5, type=int, help='Number of threads calling target API simultaneously.')
     parser.add_argument('--debugging', help='Enable extended output.')
 
     args = parser.parse_args()
