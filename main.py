@@ -7,23 +7,34 @@ from progress.bar import Bar
 def sendRequest(secret):
     target_url = args.url + secret
     if args.debugging:
-        print "Sending request :" + target_url
+        print("Sending request: " + target_url)
 
     try:
         response = requests.get(
             target_url,
-            headers = {'Authorization': 'bogus'}
+            headers = {'Authorization': 'Bearer bogus'}
         )
         if response.status_code < 400:
-            print "Got response " + response.status_code + " for request " + target_url 
+            print("Got response " + response.status_code + " for request " + target_url )
         elif response.status_code == 429:
-            print "Got status code 429 (too many requests)." 
+            print("Got status code 429 (too many requests).")
+
+        if args.debugging:
+            print(response.status_code)
 
         return response.status_code
+
     except ConnectionError as conn_e:
         if args.debugging:
-            print "Connection error: See details below." 
-            print conn_e
+            print("Connection error: See details below.")
+            print(conn_e)
+
+        return response.status_code
+
+    except Exception as general_exception:
+        if args.debugging:
+            print(general_exception)
+
         return response.status_code
 
 
@@ -33,15 +44,19 @@ def iterateOverPermutations(str):
      permList = permutate(charList)
      maxElements = len(permList)
 
-     bar = Bar('Fuzzing ', max=maxElements)
+     bar = Bar('Fuzzing ' + args.url, max=maxElements)
  
      for perm in list(permList): 
          processes = []
          with ThreadPoolExecutor(max_workers=args.threads) as executor:
-             processes.append(executor.submit(sendRequest, ''.join(perm)))
-         bar.next()
+             permutation_string = ''.join(perm)
+             processes.append(executor.submit(sendRequest, permutation_string))
+
+         if not args.debugging:
+             bar.next()
+
      bar.finish()
-     print "Finished fuzzing target " + args.url
+     print("Finished fuzzing target " + args.url)
         
 def permutate(permutationList):
     returnList = []
@@ -86,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument('--url', required=True, help='The target URL. This URL should point to and enpoint. URL parameters should be such that a secret can be appended.')
     parser.add_argument('--secret', default="123456789", help='Initial API secret to start fuzzing from.')
     parser.add_argument('--fuzzing', default=True, help='Enable Fuzzing.')
-    parser.add_argument('--threads', default=10, help='Number of threads calling API simultaneously.')
+    parser.add_argument('--threads', default=5, help='Number of threads calling target API simultaneously.')
     parser.add_argument('--debugging', help='Enable extended output.')
 
     args = parser.parse_args()
