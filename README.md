@@ -7,7 +7,7 @@ You may want to use this to check hardening of your API implementation. All it t
 
 To run this script, execute in the root directory of this repository
 
-    python main.py --url YOUR_TARGET_URL
+    python3 main.py --url YOUR_TARGET_URL
 
 YOUR_TARGET_URL is expected to be an API enpoint which accepts API secrets via URL parameter.
 
@@ -23,10 +23,12 @@ This tool helps to identify possible vulnerabilities of your API endpoints.
 
 Type
 
-    python main.py -h
+    python3 main.py -h
 
 to find out about optional parameters.
 
 Note that you may want to specify a known secret via parameter *--secret*. The value of this parameter will then be used to start fuzzing from.
 
 Use *--debugging* to get extended output including error logs.
+
+Use python3 for multi-threaded requests. Parameter *--threads* controls the maximum number of concurrent threads.

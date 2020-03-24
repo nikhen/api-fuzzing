@@ -13,7 +13,9 @@ def sendRequest(secret):
     try:
         response = requests.get(
             target_url,
-            headers = {'Authorization': 'Bearer bogus'}
+            headers = {
+                'Cache-Control': 'no-transform'
+            }
         )
         if args.debugging:
             print(response.text)
@@ -28,7 +30,6 @@ def sendRequest(secret):
     if response.status_code < 400:
         print("\nGot response " + str(response.status_code) + " for request " + str(target_url) )
         os._exit(1)
-        return response.status_code
     elif response.status_code == 429:
         print("Got status code 429 (too many requests).")
         return response.status_code
